@@ -1,5 +1,7 @@
 add_rules("mode.debug", "mode.release")
 set_languages("cxx20")
+
+set_symbols("debug")
 set_project(ThreadPool)
 
 target("MyTinyThreadPool")
