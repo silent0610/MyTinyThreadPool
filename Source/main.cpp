@@ -7,37 +7,24 @@
 using std::cout;
 using std::endl;
 using std::string;
-int a = 0;
-std::mutex mtx;
-void func()
+
+void func(int i)
 {
-    for (int i = 0; i < 10000; i += 1)
-    {
-        mtx.lock();
-        a += 1;
-        mtx.unlock();
-    }
+    for (int j = 0; j < 10; j++)
+        std::cout << i << endl;
 }
-
-class Log
-{
-public:
-    Log() {};
-    Log(const Log &log) = delete;
-    Log &operator=(const Log &log) = delete;
-    static Log &GetInstance()
-    {
-        static Log log;
-        return log;
-    }
-    void PrintLog(string t_msg)
-    {
-        std::cout << __TIME__ << ' ' << t_msg << std::endl;
-    }
-};
-
 int main(int argc, char **argv)
 {
-    Log::GetInstance().PrintLog("error");
+    ThreadPool pool{4};
+    int i = 1;
+    pool.Enqueue(func, 1);
+    pool.Enqueue(func, 2);
+    pool.Enqueue(func, 3);
+    pool.Enqueue(func, 4);
+    pool.Wait();
+    pool.Enqueue(func, 5);
+
+    // pool.Enqueue(func, 5);
+
     return 0;
 }
