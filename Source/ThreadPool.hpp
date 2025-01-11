@@ -31,16 +31,17 @@ public:
                     std::function<void()> task(std::move(m_tasks.front()));
                     m_tasks.pop();
                     lock.unlock();
-                    m_mtxWorking.lock();
+                    m_mtxWorking.lock(); // 当前工作进程数+1
                     m_workingNum += 1;
                     m_mtxWorking.unlock();
+
                     task();
 
-                    m_mtxWorking.lock();
+                    m_mtxWorking.lock(); // 当前工作进程数-1
                     lock.lock();
                     m_workingNum -= 1;
 
-                    if (m_tasks.empty() && m_workingNum == 0)
+                    if (m_tasks.empty() && m_workingNum == 0) // 当任务队列为空，且当前无运行线程时，通知wait函数
                     {
                         m_conditionWait.notify_one();
                     }
@@ -96,14 +97,14 @@ public:
     }
     template <class F, class... Args> void Enqueue(F &&f, Args &&...args) // 引用与转发
     {
-        std::function<void()> task =
-            std::bind(std::forward<F>(f), std::forward<Args>(args)...); // 转发
+        std::function<void()> task = std::bind(std::forward<F>(f), std::forward<Args>(args)...); // 转发
         {
             std::unique_lock<std::mutex> lock(m_mtx);
             m_tasks.emplace(std::move(task));
         }
         m_condition.notify_one();
     }
+    /// @brief 等待之前所有提交的任务结束
     void Wait()
     {
         std::unique_lock<std::mutex> lock(m_mtx);
